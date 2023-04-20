@@ -26,6 +26,8 @@ public:
 		// Move bullet up
 		sf::Vector2f position = getPosition();
 		setPosition(sf::Vector2f(position.x, position.y - speed));
+		hitbox.setPosition(position); // update hitbox position
+		sprite.setPosition(position); // update sprite position
 	}
 
 	sf::FloatRect getHitbox() const
@@ -38,12 +40,14 @@ public:
 		target.draw(sprite, states);
 	}
 
-private:
-	float speed = 10.f;
+protected:
+	float speed = 5.f;
 	sf::RectangleShape hitbox;
 	sf::Sprite sprite;
 	sf::Texture texture;
 };
+
+////////////////////////////////////////////////////////////////////////////////////
 
 class Ship : public sf::Drawable, public sf::Transformable
 {
@@ -112,9 +116,9 @@ public:
 
 	void updateBullets()
 	{
-		for (size_t i = 0; i < bullets.size(); i++)
+		for (size_t i = 0; i < bullets.size(); i++) //for all bullets a ship has
 		{
-			bullets[i].move();
+			bullets[i].move();					//move the bullet I
 			if (bullets[i].getPosition().y < 0) // remove bullet if it goes off screen
 			{
 				bullets.erase(bullets.begin() + i);

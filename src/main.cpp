@@ -3,6 +3,8 @@
 #include <SFML/Window.hpp>
 #include <cmath>
 
+void debugPrint(sf::RenderWindow& window);
+
 int main()
 {
 	sf::RenderWindow window(sf::VideoMode::getFullscreenModes()[0], "Space Invaders", sf::Style::Fullscreen);
@@ -47,9 +49,7 @@ int main()
 							if (!paused)
 							{
 								// Shoot bullet
-								Bullet bullet;
-								bullet.setPosition(playerShip.getPosition());
-								playerShip.bullets.push_back(bullet);
+								playerShip.createBullet();
 							}
 							break;
 
@@ -61,20 +61,20 @@ int main()
 			}
 		}
 
-		if (!paused)
+		if (!paused) //game logic
 		{
 			window.setMouseCursorVisible(false);
 			sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
 			playerShip.setPosition(sf::Vector2f(mousePosition.x - playerShip.getSprite().getGlobalBounds().width / 2.f, mousePosition.y - playerShip.getSprite().getGlobalBounds().height / 2.f));
-
+			playerShip.updateBullets();
 			window.clear();
-			//window.draw(playerShip);
-			window.display();
+			window.draw(playerShip);
 			for (auto& bullet : playerShip.bullets)
 			{
 				window.draw(bullet);
 			}
-			playerShip.updateBullets();
+
+			window.display();
 		}
 
 		else
@@ -84,4 +84,14 @@ int main()
 	}
 
 	return 0;
+}
+
+void debugPrint(sf::RenderWindow& window) //fucntion to debug
+{
+	sf::Font font;
+	font.loadFromFile("arial.ttf");
+	sf::Text debugText("This is a debug message", font, 20);
+	debugText.setFillColor(sf::Color::Red);
+	debugText.setPosition(100, 100);
+	window.draw(debugText);
 }
