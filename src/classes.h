@@ -41,7 +41,7 @@ public:
 	}
 
 protected:
-	float speed = 5.f;
+	float speed = 10.f;
 	sf::RectangleShape hitbox;
 	sf::Sprite sprite;
 	sf::Texture texture;
@@ -102,18 +102,18 @@ public:
 		target.draw(sprite, states);
 	}
 
-	sf::Sprite getSprite()
+	sf::Sprite getSprite() //return sprite if needed
 	{
 		return sprite;
 	};
 
-	void createBullet() // function to create a new bullet
+	void createBullet() //make the bullet from the ship
 	{
 		Bullet bullet;
-		bullet.setPosition(getPosition());
+		sf::Vector2f bulletPos(getPosition().x - bullet.getHitbox().width / 2.f + getHitbox().width / 2.f, getPosition().y);
+		bullet.setPosition(bulletPos);
 		bullets.push_back(bullet);
 	}
-
 	void updateBullets()
 	{
 		for (size_t i = 0; i < bullets.size(); i++) //for all bullets a ship has

@@ -13,7 +13,7 @@ int main()
 
 	bool paused = false;
 
-	Ship playerShip;
+	Ship playerShip("ship2.png");
 
 	while (window.isOpen())
 	{
@@ -29,8 +29,14 @@ int main()
 				case sf::Event::KeyPressed:
 					switch (event.key.code)
 					{
+						//pause on escape
 						case sf::Keyboard::Escape:
 							paused = !paused;
+							break;
+
+						//Shoot on space (or mouse)
+						case sf::Keyboard::Space:
+							playerShip.createBullet();
 							break;
 
 						default:
@@ -69,7 +75,7 @@ int main()
 			playerShip.updateBullets();
 			window.clear();
 			window.draw(playerShip);
-			for (auto& bullet : playerShip.bullets)
+			for (auto bullet : playerShip.bullets)
 			{
 				window.draw(bullet);
 			}
