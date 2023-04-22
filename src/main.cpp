@@ -2,6 +2,8 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <cmath>
+#include <cstdlib>
+#include <ctime>
 
 void debugPrint(sf::RenderWindow& window);
 
@@ -10,10 +12,20 @@ int main()
 	sf::RenderWindow window(sf::VideoMode::getFullscreenModes()[0], "Space Invaders", sf::Style::Fullscreen);
 	window.setMouseCursorVisible(false);
 	window.setFramerateLimit(60);
-
 	bool paused = false;
+	// Set up clock for enemy shooting
+	sf::Clock enemyShootClock;
+	float enemyShootTime = 3.f; // time between enemy shots in seconds
 
+	//player ship
 	Ship playerShip("ship2.png");
+
+	// Create enemies
+	Enemy enemy1("enemy2.png");
+	Enemy enemy2("enemy2.png");
+	srand(time(NULL));
+	enemy1.setPosition(sf::Vector2f(rand() % window.getSize().x, 0));
+	enemy2.setPosition(sf::Vector2f(rand() % window.getSize().x, 0));
 
 	while (window.isOpen())
 	{
@@ -79,7 +91,27 @@ int main()
 			{
 				window.draw(bullet);
 			}
-
+			// Update enemies and their bullets
+			enemy1.move();
+			//enemy2.move();
+			if (enemyShootClock.getElapsedTime().asSeconds() > enemyShootTime)
+			{
+				enemy1.createBullet();
+				enemy2.createBullet();
+				enemyShootClock.restart();
+			}
+			enemy1.updateBullets();
+			enemy2.updateBullets();
+			window.draw(enemy1);
+			window.draw(enemy2);
+			for (auto bullet : enemy1.bullets)
+			{
+				window.draw(bullet);
+			}
+			for (auto bullet : enemy2.bullets)
+			{
+				window.draw(bullet);
+			}
 			window.display();
 		}
 

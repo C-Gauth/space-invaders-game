@@ -132,6 +132,85 @@ protected:
 	sf::Texture texture;	   //ship texture img
 };
 
+///////////////////////////////////////////////////////////////////////////////////
+
+class Enemy : public sf::Drawable, public sf::Transformable
+{
+public:
+	vector<Bullet> bullets; // vector to store bullets
+
+	Enemy() //default const
+	{
+		if (!texture.loadFromFile("enemy.png"))
+		{
+			std::cerr << "Error loading texture\n";
+			exit(1);
+		}
+		sprite.setTexture(texture);
+
+		// Set hitbox size and position
+		hitbox.setSize(sf::Vector2f(texture.getSize()));
+		hitbox.setOrigin(hitbox.getSize() / 2.f);
+		hitbox.setPosition(getPosition());
+	}
+
+	Enemy(string filename) //custom design constructor
+	{
+		if (!texture.loadFromFile(filename))
+		{
+			std::cerr << "Error loading texture\n";
+			exit(1);
+		}
+		sprite.setTexture(texture);
+
+		// Set hitbox size and position
+		hitbox.setSize(sf::Vector2f(texture.getSize()));
+		hitbox.setOrigin(hitbox.getSize() / 2.f);
+		hitbox.setPosition(getPosition());
+	}
+
+	void move()
+	{
+		// Move enemy down
+		sf::Vector2f position = getPosition();
+		setPosition(sf::Vector2f(position.x, position.y + speed));
+		hitbox.setPosition(position); // update hitbox position
+		sprite.setPosition(position); // update sprite position
+	}
+
+	sf::FloatRect getHitbox() const
+	{
+		return hitbox.getGlobalBounds();
+	}
+
+	void draw(sf::RenderTarget& target, sf::RenderStates states) const override
+	{
+		target.draw(sprite, states);
+	}
+
+	void createBullet()
+	{
+		//Bullet newBullet(getPosition());
+		//bullets.push_back(newBullet);
+	}
+
+	void updateBullets()
+	{
+		//for (auto& bullet : bullets)
+		{
+			//bullet.move(sf::Vector2f(0.f, speed)); // move bullet down
+		}
+	}
+
+protected:
+	float speed = 5.f;
+	sf::RectangleShape hitbox;
+	sf::Sprite sprite;
+	sf::Texture texture;
+};
+
+//////////////////////////////////////////////////////////////////////////////////
+
 /*
 	// create the pause screen rectangle
 	sf::RectangleShape pauseScreen(sf::Vector2f(window.getSize().x / 2.f, window.getSize().y / 2.f));
