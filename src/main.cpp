@@ -16,20 +16,28 @@ int main()
 	sf::RenderWindow window(sf::VideoMode::getFullscreenModes()[0], "Space Invaders", sf::Style::Fullscreen);
 	window.setMouseCursorVisible(false);
 	window.setFramerateLimit(60);
+	//set up score
+	sf::Font font;
+	font.loadFromFile("8BitMage.ttf");
+	sf::Text scoreText;
+	scoreText.setFont(font);
+	scoreText.setCharacterSize(24);
+	scoreText.setFillColor(sf::Color::White);
+	scoreText.setPosition(window.getSize().x - 100.f, 20.f);
+	int score = 0;
 
 	// Set up clock for enemy shooting
 	sf::Clock enemyShootClock;
 	float enemyShootTime = 1.f; // time between enemy shots in seconds
 	sf::Clock enemySpawnClock;
-	float enemySpawnTime = 3.f; // time between enemy spawnings
+	float enemySpawnTime = 4.f; // time between enemy spawnings
 	//game variables
-	uint enemyLimit = 4;
+	uint enemyLimit = 3;
 	bool paused = false;
 	sf::Vector2i pausePosition;
 
 	//player ship
 	Ship playerShip("ship2.png");
-	int score = 0;
 
 	// Create enemies
 	Enemy enemy1("enemy2.png");
@@ -108,6 +116,8 @@ int main()
 			playerShip.setPosition(sf::Vector2f(mousePosition.x - playerShip.getSprite().getGlobalBounds().width / 2.f, mousePosition.y - playerShip.getSprite().getGlobalBounds().height / 2.f));
 			playerShip.updateBullets();
 			window.clear();
+			scoreText.setPosition(window.getSize().x - scoreText.getGlobalBounds().width - 20, 20);
+			window.draw(scoreText);
 			window.draw(playerShip);
 			//player bullet loop
 			for (auto& bullet : playerShip.bullets) // for all player bullets
@@ -124,6 +134,7 @@ int main()
 							dParticles.setPosition(it->getPosition());
 							window.draw(dParticles);
 							score += 3;
+							scoreText.setString("Score: " + std::to_string(score));
 							it = AllEnemies.erase(it); // remove the dead enemy
 						}
 						else
@@ -139,7 +150,7 @@ int main()
 				window.draw(bullet);
 			}
 			// enemy spawn loop
-			if (enemySpawnClock.getElapsedTime().asSeconds() > enemySpawnTime && AllEnemies.size() <= enemyLimit)
+			if (enemySpawnClock.getElapsedTime().asSeconds() > enemySpawnTime && AllEnemies.size() < enemyLimit)
 			{
 				Enemy thisEnemy("enemy2.png");
 				int halfEnemyWidth = thisEnemy.getSprite().getGlobalBounds().width / 2;
