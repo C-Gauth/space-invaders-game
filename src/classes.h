@@ -1,3 +1,5 @@
+#include <SFML/Graphics.hpp>
+#include <SFML/System.hpp>
 #include <iostream>
 #include <vector>
 
@@ -45,6 +47,24 @@ protected:
 	sf::RectangleShape hitbox;
 	sf::Sprite sprite;
 	sf::Texture texture;
+};
+
+//////////////////////////////////////////////////////////////////////////////////
+
+class enemyBullet : public Bullet
+{
+public:
+	void move()
+	{
+		// Move bullet down
+		sf::Vector2f position = getPosition();
+		setPosition(sf::Vector2f(position.x, position.y - bulletSpeed));
+		hitbox.setPosition(position); // update hitbox position
+		sprite.setPosition(position); // update sprite position
+	}
+
+protected:
+	float bulletSpeed = 10.f;
 };
 
 ////////////////////////////////////////////////////////////////////////////////////
@@ -126,7 +146,7 @@ public:
 		}
 	}
 
-protected:
+private:
 	sf::RectangleShape hitbox; // hitbox of the ship
 	sf::Sprite sprite;		   // sprite of the ship
 	sf::Texture texture;	   //ship texture img
@@ -137,76 +157,92 @@ protected:
 class Enemy : public sf::Drawable, public sf::Transformable
 {
 public:
-	vector<Bullet> bullets; // vector to store bullets
+	vector<enemyBullet> enemyBullets; // vector to store bullets
 
-	Enemy() //default const
+	Enemy() //default const/ different pic/ + window
 	{
-		if (!texture.loadFromFile("enemy.png"))
+		if (!Etexture.loadFromFile("enemy2.png"))
 		{
 			std::cerr << "Error loading texture\n";
 			exit(1);
 		}
-		sprite.setTexture(texture);
+		Esprite.setTexture(Etexture);
 
 		// Set hitbox size and position
-		hitbox.setSize(sf::Vector2f(texture.getSize()));
-		hitbox.setOrigin(hitbox.getSize() / 2.f);
-		hitbox.setPosition(getPosition());
+		Ehitbox.setSize(sf::Vector2f(Etexture.getSize()));
+		Ehitbox.setOrigin(Ehitbox.getSize() / 2.f);
+		Ehitbox.setPosition(getPosition());
 	}
 
-	Enemy(string filename) //custom design constructor
+	Enemy(string file) //const for custom bullet
 	{
-		if (!texture.loadFromFile(filename))
+		if (!Etexture.loadFromFile(file))
 		{
 			std::cerr << "Error loading texture\n";
 			exit(1);
 		}
-		sprite.setTexture(texture);
+		Esprite.setTexture(Etexture);
 
 		// Set hitbox size and position
-		hitbox.setSize(sf::Vector2f(texture.getSize()));
-		hitbox.setOrigin(hitbox.getSize() / 2.f);
-		hitbox.setPosition(getPosition());
+		Ehitbox.setSize(sf::Vector2f(Etexture.getSize()));
+		Ehitbox.setOrigin(Ehitbox.getSize() / 2.f);
+		Ehitbox.setPosition(getPosition());
 	}
 
 	void move()
 	{
-		// Move enemy down
+		// move enemy down
 		sf::Vector2f position = getPosition();
 		setPosition(sf::Vector2f(position.x, position.y + speed));
-		hitbox.setPosition(position); // update hitbox position
-		sprite.setPosition(position); // update sprite position
+		Ehitbox.setPosition(position); // update hitbox position
+		Esprite.setPosition(position); // update sprite position
 	}
 
-	sf::FloatRect getHitbox() const
+	void updateBullets(float bound)
 	{
-		return hitbox.getGlobalBounds();
+		for (size_t i = 0; i < enemyBullets.size(); i++) //for all bullets a ship has
+		{
+			enemyBullets[i].move();						 //move the bullet I
+			if (enemyBullets[i].getPosition().y > bound) // remove bullet if it goes off screen
+			{
+				enemyBullets.erase(enemyBullets.begin() + i);
+			}
+		}
+	}
+
+	void createBullet() //make the bullet from the ship
+	{
+		enemyBullet enemyBullet;
+		sf::Vector2f bulletPos(getPosition().x - enemyBullet.getHitbox().width / 2.f + getHitbox().width / 2.f, getPosition().y);
+		enemyBullet.setPosition(bulletPos);
+		enemyBullets.push_back(enemyBullet);
+	}
+
+	sf::FloatRect getHitbox() const // function to get the hitbox of the ship
+	{
+		return Ehitbox.getGlobalBounds();
+	}
+
+	void setPosition(sf::Vector2f position) // to move the ship
+	{
+		sf::Transformable::setPosition(position); // update position
+		Ehitbox.setPosition(position);			  // update hitbox position
+		Esprite.setPosition(position);			  // update sprite position
 	}
 
 	void draw(sf::RenderTarget& target, sf::RenderStates states) const override
 	{
-		target.draw(sprite, states);
+		target.draw(Esprite, states);
 	}
 
-	void createBullet()
-	{
-		//Bullet newBullet(getPosition());
-		//bullets.push_back(newBullet);
-	}
-
-	void updateBullets()
-	{
-		//for (auto& bullet : bullets)
-		{
-			//bullet.move(sf::Vector2f(0.f, speed)); // move bullet down
-		}
-	}
+	virtual ~Enemy()
+	{}
 
 protected:
 	float speed = 5.f;
-	sf::RectangleShape hitbox;
-	sf::Sprite sprite;
-	sf::Texture texture;
+	sf::RectangleShape Ehitbox;
+	sf::Sprite Esprite;
+	sf::Texture Etexture;
 };
 
 //////////////////////////////////////////////////////////////////////////////////
@@ -242,4 +278,36 @@ protected:
 			window.display();
 
 		}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+
+			/////////////////// MANUAL MOVING BELOW
+
+			// Update enemies and their bullets
+			enemy1.move();
+			//enemy2.move();
+			if (enemyShootClock.getElapsedTime().asSeconds() > enemyShootTime)
+			{
+				enemy1.createBullet();
+				enemy2.createBullet();
+				enemyShootClock.restart();
+			}
+			enemy1.updateBullets();
+			enemy2.updateBullets();
+			window.draw(enemy1);
+			window.draw(enemy2);
+			for (auto bullet : enemy1.bullets)
+			{
+				window.draw(bullet);
+			}
+			for (auto bullet : enemy2.bullets)
+			{
+				window.draw(bullet);
+			}
+
+
+
+			///////////////////////////////////////
+
 */

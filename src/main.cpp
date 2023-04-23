@@ -1,21 +1,30 @@
 #include "classes.h"
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
+#include <algorithm>
 #include <cmath>
 #include <cstdlib>
 #include <ctime>
+#include <vector>
 
-void debugPrint(sf::RenderWindow& window);
+void debugPrint(sf::RenderWindow& window); //helper to debug
+vector<Enemy> AllEnemies;				   // global enemy list
 
 int main()
 {
+	//window setup
 	sf::RenderWindow window(sf::VideoMode::getFullscreenModes()[0], "Space Invaders", sf::Style::Fullscreen);
 	window.setMouseCursorVisible(false);
 	window.setFramerateLimit(60);
-	bool paused = false;
+
 	// Set up clock for enemy shooting
 	sf::Clock enemyShootClock;
-	float enemyShootTime = 3.f; // time between enemy shots in seconds
+	float enemyShootTime = 1.f; // time between enemy shots in seconds
+	sf::Clock enemySpawnClock;
+	float enemySpawnTime = 3.f; // time between enemy spawnings
+	//game variables
+	uint enemyLimit = 4;
+	bool paused = false;
 
 	//player ship
 	Ship playerShip("ship2.png");
@@ -23,8 +32,10 @@ int main()
 	// Create enemies
 	Enemy enemy1("enemy2.png");
 	Enemy enemy2("enemy2.png");
+	AllEnemies.push_back(enemy1);
+	AllEnemies.push_back(enemy2);
 	srand(time(NULL));
-	enemy1.setPosition(sf::Vector2f(rand() % window.getSize().x, 0));
+	enemy1.setPosition(sf::Vector2f(100, 0));
 	enemy2.setPosition(sf::Vector2f(rand() % window.getSize().x, 0));
 
 	while (window.isOpen())
@@ -87,33 +98,51 @@ int main()
 			playerShip.updateBullets();
 			window.clear();
 			window.draw(playerShip);
+			//player bullet loop
 			for (auto bullet : playerShip.bullets)
 			{
 				window.draw(bullet);
 			}
-			// Update enemies and their bullets
-			enemy1.move();
-			//enemy2.move();
+			// enemy spawn loop
+			if (enemySpawnClock.getElapsedTime().asSeconds() > enemySpawnTime && AllEnemies.size() <= enemyLimit)
+			{
+				Enemy thisEnemy("enemy2.png");
+				AllEnemies.push_back(thisEnemy);
+				thisEnemy.setPosition(sf::Vector2f(rand() % window.getSize().x, 0));
+			}
+			// enemy shoot loop
 			if (enemyShootClock.getElapsedTime().asSeconds() > enemyShootTime)
 			{
-				enemy1.createBullet();
-				enemy2.createBullet();
+
+				for (auto& enemy : AllEnemies) // for all enemies
+				{
+					enemy.createBullet(); // shoot
+				}
 				enemyShootClock.restart();
 			}
-			enemy1.updateBullets();
-			enemy2.updateBullets();
-			window.draw(enemy1);
-			window.draw(enemy2);
-			for (auto bullet : enemy1.bullets)
+			//enemy update loop
+			auto it = AllEnemies.begin();
+			while (it != AllEnemies.end())
 			{
-				window.draw(bullet);
+				auto& thisEnemy = *it;
+				thisEnemy.move();
+				if (thisEnemy.getPosition().y > window.getSize().y)
+				{
+					it = AllEnemies.erase(it);
+					continue;
+				}
+				thisEnemy.updateBullets(window.getSize().y);
+				window.draw(thisEnemy);
+				for (auto enemyBullet : thisEnemy.enemyBullets)
+				{
+					window.draw(enemyBullet);
+				}
+				++it;
 			}
-			for (auto bullet : enemy2.bullets)
-			{
-				window.draw(bullet);
-			}
+			//update the window
 			window.display();
-		}
+
+		} //end of the game logic
 
 		else
 		{
