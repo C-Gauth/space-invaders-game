@@ -223,6 +223,11 @@ public:
 		return Ehitbox.getGlobalBounds();
 	}
 
+	sf::Sprite getSprite() //return sprite if needed
+	{
+		return Esprite;
+	};
+
 	void setPosition(sf::Vector2f position) // to move the ship
 	{
 		sf::Transformable::setPosition(position); // update position

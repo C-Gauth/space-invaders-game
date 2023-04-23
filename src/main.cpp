@@ -25,6 +25,7 @@ int main()
 	//game variables
 	uint enemyLimit = 4;
 	bool paused = false;
+	sf::Vector2i pausePosition;
 
 	//player ship
 	Ship playerShip("ship2.png");
@@ -54,7 +55,16 @@ int main()
 					{
 						//pause on escape
 						case sf::Keyboard::Escape:
-							paused = !paused;
+							if (paused == false)
+							{
+								paused = !paused;								//flip
+								pausePosition = sf::Mouse::getPosition(window); //get pause location
+							}
+							else
+							{
+								paused = !paused;							   //flip
+								sf::Mouse::setPosition(pausePosition, window); // return to pause location
+							};
 							break;
 
 						//Shoot on space (or mouse)
@@ -107,8 +117,10 @@ int main()
 			if (enemySpawnClock.getElapsedTime().asSeconds() > enemySpawnTime && AllEnemies.size() <= enemyLimit)
 			{
 				Enemy thisEnemy("enemy2.png");
+				int halfEnemyWidth = thisEnemy.getSprite().getGlobalBounds().width / 2;
+				int randomX = rand() % (window.getSize().x - 2 * halfEnemyWidth) + halfEnemyWidth;
+				thisEnemy.setPosition(sf::Vector2f(randomX, 0));
 				AllEnemies.push_back(thisEnemy);
-				thisEnemy.setPosition(sf::Vector2f(rand() % window.getSize().x, 0));
 			}
 			// enemy shoot loop
 			if (enemyShootClock.getElapsedTime().asSeconds() > enemyShootTime)
