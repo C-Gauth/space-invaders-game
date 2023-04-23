@@ -29,6 +29,7 @@ int main()
 
 	//player ship
 	Ship playerShip("ship2.png");
+	int score = 0;
 
 	// Create enemies
 	Enemy enemy1("enemy2.png");
@@ -109,8 +110,32 @@ int main()
 			window.clear();
 			window.draw(playerShip);
 			//player bullet loop
-			for (auto bullet : playerShip.bullets)
+			for (auto& bullet : playerShip.bullets) // for all player bullets
 			{
+				for (auto it = AllEnemies.begin(); it != AllEnemies.end();) //for all enemies
+				{
+					if (it->isColliding(bullet.getSprite())) // if enemy is hit by bullet
+					{
+
+						it->health = it->health - bullet.dmg; //hurt them
+						if (it->health <= 0)				  // if dead
+						{
+							deathParticles dParticles;
+							dParticles.setPosition(it->getPosition());
+							window.draw(dParticles);
+							score += 3;
+							it = AllEnemies.erase(it); // remove the dead enemy
+						}
+						else
+						{
+							++it;
+						}
+					}
+					else
+					{
+						++it;
+					}
+				}
 				window.draw(bullet);
 			}
 			// enemy spawn loop
@@ -134,21 +159,22 @@ int main()
 			}
 			//enemy update loop
 			auto it = AllEnemies.begin();
-			while (it != AllEnemies.end())
+			while (it != AllEnemies.end()) //iterate through all enemies
 			{
 				auto& thisEnemy = *it;
-				thisEnemy.move();
-				if (thisEnemy.getPosition().y > window.getSize().y)
+				thisEnemy.move();									// move the enemt
+				if (thisEnemy.getPosition().y > window.getSize().y) // if out of bounds delete
 				{
 					it = AllEnemies.erase(it);
 					continue;
 				}
-				thisEnemy.updateBullets(window.getSize().y);
-				window.draw(thisEnemy);
+				thisEnemy.updateBullets(window.getSize().y); // update bullets
+				window.draw(thisEnemy);						 // draw enemy
 				for (auto enemyBullet : thisEnemy.enemyBullets)
 				{
 					window.draw(enemyBullet);
 				}
+
 				++it;
 			}
 			//update the window

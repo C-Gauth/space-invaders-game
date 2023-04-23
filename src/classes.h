@@ -8,8 +8,11 @@ using namespace std;
 class Bullet : public sf::Drawable, public sf::Transformable
 {
 public:
+	int dmg;
+
 	Bullet()
 	{
+		dmg = 20;
 		if (!texture.loadFromFile("bullet.png"))
 		{
 			std::cerr << "Error loading texture\n";
@@ -41,6 +44,11 @@ public:
 	{
 		target.draw(sprite, states);
 	}
+
+	sf::Sprite getSprite() //return sprite if needed
+	{
+		return sprite;
+	};
 
 protected:
 	float speed = 10.f;
@@ -146,6 +154,21 @@ public:
 		}
 	}
 
+	bool isColliding(const sf::Sprite& otherSprite) const
+	{
+		// Get the bounding boxes of the two sprites
+		sf::FloatRect playerBounds = sprite.getGlobalBounds();
+		sf::FloatRect otherBounds = otherSprite.getGlobalBounds();
+
+		// Check if the bounding boxes intersect
+		if (playerBounds.intersects(otherBounds))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
 private:
 	sf::RectangleShape hitbox; // hitbox of the ship
 	sf::Sprite sprite;		   // sprite of the ship
@@ -158,6 +181,7 @@ class Enemy : public sf::Drawable, public sf::Transformable
 {
 public:
 	vector<enemyBullet> enemyBullets; // vector to store bullets
+	int health;
 
 	Enemy() //default const/ different pic/ + window
 	{
@@ -167,6 +191,7 @@ public:
 			exit(1);
 		}
 		Esprite.setTexture(Etexture);
+		health = 100;
 
 		// Set hitbox size and position
 		Ehitbox.setSize(sf::Vector2f(Etexture.getSize()));
@@ -182,6 +207,7 @@ public:
 			exit(1);
 		}
 		Esprite.setTexture(Etexture);
+		health = 100;
 
 		// Set hitbox size and position
 		Ehitbox.setSize(sf::Vector2f(Etexture.getSize()));
@@ -243,6 +269,21 @@ public:
 	virtual ~Enemy()
 	{}
 
+	bool isColliding(const sf::Sprite& otherSprite) const
+	{
+		// Get the bounding boxes of the two sprites
+		sf::FloatRect playerBounds = Esprite.getGlobalBounds();
+		sf::FloatRect otherBounds = otherSprite.getGlobalBounds();
+
+		// Check if the bounding boxes intersect
+		if (playerBounds.intersects(otherBounds))
+		{
+			return true;
+		}
+
+		return false;
+	}
+
 protected:
 	float speed = 5.f;
 	sf::RectangleShape Ehitbox;
@@ -252,67 +293,43 @@ protected:
 
 //////////////////////////////////////////////////////////////////////////////////
 
-/*
-	// create the pause screen rectangle
-	sf::RectangleShape pauseScreen(sf::Vector2f(window.getSize().x / 2.f, window.getSize().y / 2.f));
-	pauseScreen.setFillColor(sf::Color(0, 0, 0, 128)); // semi-transparent black background for the pause screen
-	pauseScreen.setOrigin(pauseScreen.getSize() / 2.f);
-	pauseScreen.setPosition(windowSize.x / 2.f, windowSize.y / 2.f);
-
-
-	sf::Font font;
-	font.loadFromFile("arial.ttf");
-
-	sf::Text resumeText("Resume", font, 250);
-	resumeText.setFillColor(sf::Color::White);
-	resumeText.setPosition(windowSize.x / 2.f - resumeText.getLocalBounds().width / 2.f, windowSize.y / 2.f - 50);
-
-	sf::Text exitText("Exit Game", font, 250);
-	exitText.setFillColor(sf::Color::White);
-	exitText.setPosition(windowSize.x / 2.f - exitText.getLocalBounds().width / 2.f, windowSize.y / 2.f + 50);
-*/
-
-/*
-		else // draw the pause screen and buttons if the game is paused
+class deathParticles : public sf::Drawable, public sf::Transformable
+{
+public:
+	deathParticles()
+	{
+		if (!texture.loadFromFile("particles.png"))
 		{
-			window.setMouseCursorVisible(true); // show the cursor when paused
-
-			window.draw(pauseScreen);
-			window.draw(resumeText);
-			window.draw(exitText);
-			window.display();
-
+			std::cerr << "Error loading texture\n";
+			exit(1);
 		}
+		sprite.setTexture(texture);
+	}
 
-///////////////////////////////////////////////////////////////////////////////////////////////////////////////
+	deathParticles(string file)
+	{
+		if (!texture.loadFromFile(file))
+		{
+			std::cerr << "Error loading texture\n";
+			exit(1);
+		}
+		sprite.setTexture(texture);
+	}
 
+	void setPosition(sf::Vector2f position) // to move the ship
+	{
+		sf::Transformable::setPosition(position); // update position
+		sprite.setPosition(position);			  // update sprite position
+	}
 
-			/////////////////// MANUAL MOVING BELOW
+	void draw(sf::RenderTarget& target, sf::RenderStates states) const
+	{
+		states.transform *= getTransform(); // combine the transform of the particle system with the transform of the parent
+		states.texture = NULL;				// we don't need a texture because we're drawing vertices
+		target.draw(sprite, states);		// draw the vertex array
+	}
 
-			// Update enemies and their bullets
-			enemy1.move();
-			//enemy2.move();
-			if (enemyShootClock.getElapsedTime().asSeconds() > enemyShootTime)
-			{
-				enemy1.createBullet();
-				enemy2.createBullet();
-				enemyShootClock.restart();
-			}
-			enemy1.updateBullets();
-			enemy2.updateBullets();
-			window.draw(enemy1);
-			window.draw(enemy2);
-			for (auto bullet : enemy1.bullets)
-			{
-				window.draw(bullet);
-			}
-			for (auto bullet : enemy2.bullets)
-			{
-				window.draw(bullet);
-			}
-
-
-
-			///////////////////////////////////////
-
-*/
+private:
+	sf::Sprite sprite;
+	sf::Texture texture;
+};
