@@ -141,6 +141,7 @@ int main()
 						{
 							++it;
 						}
+						// ---------get rid of bullet?????-------
 					}
 					else
 					{
@@ -179,13 +180,23 @@ int main()
 					it = AllEnemies.erase(it);
 					continue;
 				}
-				thisEnemy.updateBullets(window.getSize().y); // update bullets
-				window.draw(thisEnemy);						 // draw enemy
-				for (auto enemyBullet : thisEnemy.enemyBullets)
+				thisEnemy.updateBullets(window.getSize().y);	// update bullets
+				window.draw(thisEnemy);							// draw enemy
+				for (auto enemyBullet : thisEnemy.enemyBullets) //for each bullet of this enemy
 				{
-					window.draw(enemyBullet);
-				}
+					window.draw(enemyBullet); // draw it
 
+					if (playerShip.isColliding(enemyBullet.getSprite())) // check for player colision
+					{
+						playerShip.health = playerShip.health - enemyBullet.dmg; // hurt player
+						if (playerShip.health <= 0)
+						{
+							cout << "Game over! Health: " << playerShip.health << endl;
+							//-----do something to end the game ----
+						}
+						// --- do something to get rid of the bullet ----
+					}
+				}
 				++it;
 			}
 			//update the window

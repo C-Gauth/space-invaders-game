@@ -66,7 +66,7 @@ public:
 	{
 		// Move bullet down
 		sf::Vector2f position = getPosition();
-		setPosition(sf::Vector2f(position.x, position.y - bulletSpeed));
+		setPosition(sf::Vector2f(position.x, position.y + bulletSpeed));
 		hitbox.setPosition(position); // update hitbox position
 		sprite.setPosition(position); // update sprite position
 	}
@@ -82,6 +82,7 @@ class Ship : public sf::Drawable, public sf::Transformable
 
 public:
 	vector<Bullet> bullets; // vector to store bullets
+	int health;
 
 	Ship()
 	{
@@ -91,7 +92,7 @@ public:
 			exit(1);
 		}
 		sprite.setTexture(texture);
-
+		health = 100;
 		// Set hitbox size and position
 		hitbox.setSize(sf::Vector2f(texture.getSize()));
 		hitbox.setOrigin(hitbox.getSize() / 2.f);
@@ -106,7 +107,7 @@ public:
 			exit(1);
 		}
 		sprite.setTexture(texture);
-
+		health = 100;
 		// Set hitbox size and position
 		hitbox.setSize(sf::Vector2f(texture.getSize()));
 		hitbox.setOrigin(hitbox.getSize() / 2.f);
