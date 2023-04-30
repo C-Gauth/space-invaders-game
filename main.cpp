@@ -158,7 +158,17 @@ int main()
 								}
 								if (menupos == 1) //reset from pause
 								{
-									//figure out reset here can just reset score and health
+									//reset here
+									paused = !paused;
+									playerShip.health = 0;
+									score = 0;
+									pMenu.resetMenuClicked();
+									window.clear();
+									window.draw(scoreText);
+									scoreText.setString("Score: " + std::to_string(score));
+									//clear eneimes here
+
+									window.display();
 								}
 								if (menupos == 2) //quit from pause
 								{
@@ -171,14 +181,17 @@ int main()
 								menupos = gMenu.MenuPos();
 								if (menupos == 0) //reset
 								{
-									paused = !paused;
 									gOver = !gOver;
 									playerShip.health = 0;
 									score = 0;
 									gMenu.resetMenuClicked(); //figure out reset here can just reset score and health
 									window.clear();
+									window.draw(scoreText);
+									scoreText.setString("Score: " + std::to_string(score));
+									//clear eneimes here
+
 									window.display();
-									sf::Mouse::setPosition(pausePosition, window);
+									//sf::Mouse::setPosition(pausePosition, window);
 								}
 								if (menupos == 1) //quit
 								{
@@ -302,6 +315,7 @@ int main()
 							cout << "Game over! Health: " << playerShip.health << endl;
 							//-----do something to end the game ----
 							gOver = !gOver;
+							//clear eneimes off here
 							gMenu.setupScore(score);
 						}
 						// --- do something to get rid of the bullet ----
