@@ -17,13 +17,30 @@ int main()
 	window.setMouseCursorVisible(false);
 	window.setFramerateLimit(60);
 
+	// Load background texture and create Background object
+	sf::Texture backgroundTexture;
+	if (!backgroundTexture.loadFromFile("background_04.png"))
+	{
+		// Handle error if texture file not found
+	}
+	Background background(window);
+
+	//set up score
+	sf::Font font;
+	font.loadFromFile("8BitMage.ttf");
+	sf::Text scoreText;
+	scoreText.setFont(font);
+	scoreText.setCharacterSize(24);
+	scoreText.setFillColor(sf::Color::White);
+	scoreText.setPosition(window.getSize().x - 100.f, 20.f);
+
 	// Set up clock for enemy shooting
 	sf::Clock enemyShootClock;
 	float enemyShootTime = 1.f; // time between enemy shots in seconds
 	sf::Clock enemySpawnClock;
 	float enemySpawnTime = 3.f; // time between enemy spawnings
 	//game variables
-	uint enemyLimit = 4;
+	int enemyLimit = 4;
 	bool paused = false;
 	sf::Vector2i pausePosition;
 
@@ -36,8 +53,13 @@ int main()
 	AllEnemies.push_back(enemy1);
 	AllEnemies.push_back(enemy2);
 	srand(time(NULL));
+
+	// Set position for enemy 1
 	enemy1.setPosition(sf::Vector2f(100, 0));
-	enemy2.setPosition(sf::Vector2f(rand() % window.getSize().x, 0));
+
+	// Set random position for enemy 2
+	sf::Vector2f enemy2Position(rand() % window.getSize().x, 0);
+	enemy2.setPosition(enemy2Position);
 
 	while (window.isOpen())
 	{
@@ -107,6 +129,9 @@ int main()
 			playerShip.setPosition(sf::Vector2f(mousePosition.x - playerShip.getSprite().getGlobalBounds().width / 2.f, mousePosition.y - playerShip.getSprite().getGlobalBounds().height / 2.f));
 			playerShip.updateBullets();
 			window.clear();
+			window.draw(background);
+			scoreText.setPosition(window.getSize().x - scoreText.getGlobalBounds().width - 20, 20);
+			window.draw(scoreText);
 			window.draw(playerShip);
 			//player bullet loop
 			for (auto bullet : playerShip.bullets)
@@ -114,12 +139,13 @@ int main()
 				window.draw(bullet);
 			}
 			// enemy spawn loop
-			if (enemySpawnClock.getElapsedTime().asSeconds() > enemySpawnTime && AllEnemies.size() <= enemyLimit)
+			if (enemySpawnClock.getElapsedTime().asSeconds() > enemySpawnTime && static_cast<unsigned>(AllEnemies.size()) > enemyLimit)
 			{
 				Enemy thisEnemy("enemy2.png");
 				AllEnemies.push_back(thisEnemy);
 				thisEnemy.setPosition(sf::Vector2f(rand() % window.getSize().x, 0));
 			}
+
 			// enemy shoot loop
 			if (enemyShootClock.getElapsedTime().asSeconds() > enemyShootTime)
 			{
