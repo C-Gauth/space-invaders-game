@@ -11,7 +11,7 @@
 
 void debugPrint(sf::RenderWindow& window); //helper to debug
 vector<Enemy> AllEnemies;				   // global enemy list
-vector<Boss> AllBosses;					   // global Boss list
+sf::Texture enemyTexture;
 
 int main()
 {
@@ -27,6 +27,12 @@ int main()
 		// Handle error if texture file not found
 	}
 	Background background(window);
+
+	//load enemy texture
+	if (!enemyTexture.loadFromFile("enemy2.png"))
+	{
+		std::cout << "--ERROR loading enemy texture--";
+	}
 
 	//set up score
 	sf::Font font;
@@ -53,22 +59,11 @@ int main()
 
 	// Create enemies
 	Enemy enemy1("enemy2.png");
-	Enemy enemy2("enemy2.png");
-	Boss boss1;
 	AllEnemies.push_back(enemy1);
-	AllEnemies.push_back(enemy2);
-	AllBosses.push_back(boss1);
 	srand(time(NULL));
 
 	// Set position for enemy 1
 	enemy1.setPosition(sf::Vector2f(100, 0));
-
-	// Set random position for enemy 2
-	sf::Vector2f enemy2Position(rand() % window.getSize().x, 0);
-	enemy2.setPosition(enemy2Position);
-
-	//try boss
-	boss1.setPosition(sf::Vector2f(200, 200));
 
 	//Pause Menu
 	PauseMenu pMenu;
@@ -101,7 +96,6 @@ int main()
 								pMenu.draw(window); // render pause menu
 								window.display();	// update window
 
-								std::cout << "this one pauses" << endl;
 								pausePosition = sf::Mouse::getPosition(window); //get pause location
 							}
 							/*else //escape no longer unpauses game when paused
@@ -189,7 +183,7 @@ int main()
 								if (menupos == 0) //reset
 								{
 									gOver = !gOver;
-									playerShip.health = 0;
+									playerShip.health = 100;
 									score = 0;
 									gMenu.resetMenuClicked(); //figure out reset here can just reset score and health
 									window.clear();
@@ -247,7 +241,6 @@ int main()
 			scoreText.setPosition(window.getSize().x - scoreText.getGlobalBounds().width - 20, 20);
 			window.draw(scoreText);
 			window.draw(playerShip);
-			window.draw(boss1);
 			//player bullet loop
 			for (auto& bullet : playerShip.bullets) // for all player bullets
 			{
@@ -282,7 +275,7 @@ int main()
 			// enemy spawn loop
 			if (enemySpawnClock.getElapsedTime().asSeconds() > enemySpawnTime && AllEnemies.size() <= enemyLimit)
 			{
-				Enemy thisEnemy("enemy2.png");
+				Enemy thisEnemy(enemyTexture);
 				int halfEnemyWidth = thisEnemy.getSprite().getGlobalBounds().width / 2;
 				int randomX = rand() % (window.getSize().x - 2 * halfEnemyWidth) + halfEnemyWidth;
 				thisEnemy.setPosition(sf::Vector2f(randomX, 0));
