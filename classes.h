@@ -57,6 +57,8 @@ protected:
 	sf::Texture texture;
 };
 
+//////////////////////////////////////////////////////////////////////////////////
+
 class Background : public sf::Drawable, public sf::Transformable
 {
 public:
@@ -225,7 +227,6 @@ public:
 		}
 		Esprite.setTexture(Etexture);
 		health = 100;
-
 		// Set hitbox size and position
 		Ehitbox.setSize(sf::Vector2f(Etexture.getSize()));
 		Ehitbox.setOrigin(Ehitbox.getSize() / 2.f);
@@ -239,11 +240,21 @@ public:
 			std::cerr << "Error loading texture\n";
 			exit(1);
 		}
-		Esprite.setTexture(Etexture);
 		health = 100;
-
+		Etexture.loadFromFile(file);
+		Esprite.setTexture(Etexture);
 		// Set hitbox size and position
 		Ehitbox.setSize(sf::Vector2f(Etexture.getSize()));
+		Ehitbox.setOrigin(Ehitbox.getSize() / 2.f);
+		Ehitbox.setPosition(getPosition());
+	}
+
+	Enemy(sf::Texture& texture) /// constructor for pre-loaded textures
+	{
+		health = 100;
+		Esprite.setTexture(texture);
+		// Set hitbox size and position
+		Ehitbox.setSize(sf::Vector2f(texture.getSize()));
 		Ehitbox.setOrigin(Ehitbox.getSize() / 2.f);
 		Ehitbox.setPosition(getPosition());
 	}
