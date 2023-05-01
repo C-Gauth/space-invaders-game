@@ -59,6 +59,40 @@ protected:
 
 //////////////////////////////////////////////////////////////////////////////////
 
+class Background : public sf::Drawable, public sf::Transformable
+{
+public:
+	Background(sf::RenderWindow& window)
+	{
+		if (!texture.loadFromFile("background_04.png"))
+		{
+			std::cerr << "Error loading texture\n";
+			exit(1);
+		}
+
+		sf::Vector2u textureSize = texture.getSize();
+		sf::Vector2u windowSize = window.getSize();
+
+		float scaleX = (float)windowSize.x / textureSize.x;
+		float scaleY = (float)windowSize.y / textureSize.y;
+
+		sprite.setTexture(texture);
+		sprite.setScale(scaleX, scaleY);
+	}
+
+	void draw(sf::RenderTarget& target, sf::RenderStates states) const override
+	{
+		states.transform *= getTransform();
+		target.draw(sprite, states);
+	}
+
+private:
+	sf::Texture texture;
+	sf::Sprite sprite;
+};
+
+//////////////////////////////////////////////////////////////////////////////////
+
 class enemyBullet : public Bullet
 {
 public:
@@ -287,6 +321,77 @@ public:
 
 protected:
 	float speed = 5.f;
+	sf::RectangleShape Ehitbox;
+	sf::Sprite Esprite;
+	sf::Texture Etexture;
+};
+
+//////////////////////////////////////////////////////////////////////////////////
+
+class Boss : public Enemy
+{
+public:
+	vector<enemyBullet> enemyBullets; // vector to store bullets
+	int health;
+
+	Boss() //default const/ different pic/ + window
+	{
+		if (!Etexture.loadFromFile("boss.png"))
+		{
+			std::cerr << "Error loading texture\n";
+			exit(1);
+		}
+		Esprite.setTexture(Etexture);
+		health = 1000;
+
+		// Set hitbox size and position
+		Ehitbox.setSize(sf::Vector2f(Etexture.getSize()));
+		Ehitbox.setOrigin(Ehitbox.getSize() / 2.f);
+		Ehitbox.setPosition(getPosition());
+	}
+
+	void move()
+	{
+		// move enemy down
+		sf::Vector2f position = getPosition();
+		setPosition(sf::Vector2f(position.x, position.y + speed));
+		Ehitbox.setPosition(position); // update hitbox position
+		Esprite.setPosition(position); // update sprite position
+	}
+
+	void updateBullets(float bound)
+	{
+		for (size_t i = 0; i < enemyBullets.size(); i++) //for all bullets a ship has
+		{
+			enemyBullets[i].move();						 //move the bullet I
+			if (enemyBullets[i].getPosition().y > bound) // remove bullet if it goes off screen
+			{
+				enemyBullets.erase(enemyBullets.begin() + i);
+			}
+		}
+	}
+
+	void createBullet() //make the bullet from the ship
+	{
+		enemyBullet enemyBullet0, enemyBullet1, enemyBullet2;
+		sf::Vector2f bulletPos(getPosition().x - enemyBullet0.getHitbox().width / 2.f + getHitbox().width / 2.f, getPosition().y);
+		sf::Vector2f bulletPos1(getPosition().x - enemyBullet1.getHitbox().width / 2.f + getHitbox().width / 3.f, getPosition().y);
+		sf::Vector2f bulletPos2(getPosition().x - enemyBullet2.getHitbox().width / 2.f - getHitbox().width / 3.f, getPosition().y);
+		enemyBullet0.setPosition(bulletPos);
+		enemyBullet1.setPosition(bulletPos1);
+		enemyBullet2.setPosition(bulletPos2);
+		enemyBullets.push_back(enemyBullet0);
+		enemyBullets.push_back(enemyBullet1);
+		enemyBullets.push_back(enemyBullet2);
+	}
+
+	void draw(sf::RenderTarget& target, sf::RenderStates states) const override
+	{
+		target.draw(Esprite, states);
+	}
+
+protected:
+	float speed = 1.5f;
 	sf::RectangleShape Ehitbox;
 	sf::Sprite Esprite;
 	sf::Texture Etexture;

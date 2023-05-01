@@ -1,4 +1,6 @@
 #include "classes.h"
+#include "gameOverMenu.hpp"
+#include "pauseMenu.hpp"
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <algorithm>
@@ -9,6 +11,7 @@
 
 void debugPrint(sf::RenderWindow& window); //helper to debug
 vector<Enemy> AllEnemies;				   // global enemy list
+vector<Boss> AllBosses;					   // global Boss list
 
 int main()
 {
@@ -16,6 +19,15 @@ int main()
 	sf::RenderWindow window(sf::VideoMode::getFullscreenModes()[0], "Space Invaders", sf::Style::Fullscreen);
 	window.setMouseCursorVisible(false);
 	window.setFramerateLimit(60);
+
+	// Load background texture and create Background object
+	sf::Texture backgroundTexture;
+	if (!backgroundTexture.loadFromFile("background_04.png"))
+	{
+		// Handle error if texture file not found
+	}
+	Background background(window);
+
 	//set up score
 	sf::Font font;
 	font.loadFromFile("8BitMage.ttf");
@@ -32,7 +44,7 @@ int main()
 	sf::Clock enemySpawnClock;
 	float enemySpawnTime = 4.f; // time between enemy spawnings
 	//game variables
-	uint enemyLimit = 3;
+	uint enemyLimit = 4;
 	bool paused = false;
 	sf::Vector2i pausePosition;
 
@@ -42,11 +54,29 @@ int main()
 	// Create enemies
 	Enemy enemy1("enemy2.png");
 	Enemy enemy2("enemy2.png");
+	Boss boss1;
 	AllEnemies.push_back(enemy1);
 	AllEnemies.push_back(enemy2);
+	AllBosses.push_back(boss1);
 	srand(time(NULL));
+
+	// Set position for enemy 1
 	enemy1.setPosition(sf::Vector2f(100, 0));
-	enemy2.setPosition(sf::Vector2f(rand() % window.getSize().x, 0));
+
+	// Set random position for enemy 2
+	sf::Vector2f enemy2Position(rand() % window.getSize().x, 0);
+	enemy2.setPosition(enemy2Position);
+
+	//try boss
+	boss1.setPosition(sf::Vector2f(200, 200));
+
+	//Pause Menu
+	PauseMenu pMenu;
+	int menupos;
+
+	//Game over Menu
+	GameOver gMenu;
+	bool gOver = false;
 
 	while (window.isOpen())
 	{
@@ -64,21 +94,119 @@ int main()
 					{
 						//pause on escape
 						case sf::Keyboard::Escape:
-							if (paused == false)
+							if (paused == false && gOver != true)
 							{
-								paused = !paused;								//flip
+								paused = !paused;	//flip
+								window.clear();		// clear window
+								pMenu.draw(window); // render pause menu
+								window.display();	// update window
+
+								std::cout << "this one pauses" << endl;
 								pausePosition = sf::Mouse::getPosition(window); //get pause location
 							}
-							else
+							/*else //escape no longer unpauses game when paused
 							{
-								paused = !paused;							   //flip
+								paused = !paused; //flip
+								std::cout << "this one unpauses" << endl;
+								//reset pausemenu clicked here
+								pMenu.resetMenuClicked();
 								sf::Mouse::setPosition(pausePosition, window); // return to pause location
-							};
+							};*/
 							break;
 
 						//Shoot on space (or mouse)
 						case sf::Keyboard::Space:
 							playerShip.createBullet();
+							break;
+
+						case sf::Keyboard::W:
+							if (paused == true)
+							{
+								pMenu.moveUp();
+								window.clear();		// clear window
+								pMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							if (gOver == true && paused != true)
+							{
+								gMenu.moveUp();
+								window.clear();		// clear window
+								gMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							break;
+
+						case sf::Keyboard::S:
+							if (paused == true)
+							{
+								pMenu.moveDown();
+								window.clear();		// clear window
+								pMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							if (gOver == true && paused != true)
+							{
+								gMenu.moveDown();
+								window.clear();		// clear window
+								gMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							break;
+						case sf::Keyboard::Return:
+							if (paused == true && gOver != true)
+							{
+								menupos = pMenu.MenuPos();
+								if (menupos == 0) //resume from pause
+								{
+									paused = !paused;
+									pMenu.resetMenuClicked();
+									sf::Mouse::setPosition(pausePosition, window);
+								}
+								if (menupos == 1) //reset from pause
+								{
+									//reset here
+									paused = !paused;
+									playerShip.health = 100;
+									score = 0;
+									pMenu.resetMenuClicked();
+									window.clear();
+									window.draw(scoreText);
+									scoreText.setString("Score: " + std::to_string(score));
+									//clear eneimes here
+									AllEnemies.clear();
+									std::cout << "Enemies cleared";
+									window.display();
+								}
+								if (menupos == 2) //quit from pause
+								{
+									window.close();
+								}
+							}
+
+							if (gOver == true)
+							{
+								menupos = gMenu.MenuPos();
+								if (menupos == 0) //reset
+								{
+									gOver = !gOver;
+									playerShip.health = 0;
+									score = 0;
+									gMenu.resetMenuClicked(); //figure out reset here can just reset score and health
+									window.clear();
+									window.draw(scoreText);
+									scoreText.setString("Score: " + std::to_string(score));
+									//clear eneimes here
+									AllEnemies.clear();
+									window.display();
+									//sf::Mouse::setPosition(pausePosition, window);
+								}
+								if (menupos == 1) //quit
+								{
+									//quits game
+									window.close();
+								}
+							}
+
 							break;
 
 						default:
@@ -108,17 +236,18 @@ int main()
 					break;
 			}
 		}
-
-		if (!paused) //game logic
+		if (!paused && gOver == false) //game logic
 		{
 			window.setMouseCursorVisible(false);
 			sf::Vector2i mousePosition = sf::Mouse::getPosition(window);
 			playerShip.setPosition(sf::Vector2f(mousePosition.x - playerShip.getSprite().getGlobalBounds().width / 2.f, mousePosition.y - playerShip.getSprite().getGlobalBounds().height / 2.f));
 			playerShip.updateBullets();
 			window.clear();
+			window.draw(background);
 			scoreText.setPosition(window.getSize().x - scoreText.getGlobalBounds().width - 20, 20);
 			window.draw(scoreText);
 			window.draw(playerShip);
+			window.draw(boss1);
 			//player bullet loop
 			for (auto& bullet : playerShip.bullets) // for all player bullets
 			{
@@ -151,7 +280,7 @@ int main()
 				window.draw(bullet);
 			}
 			// enemy spawn loop
-			if (enemySpawnClock.getElapsedTime().asSeconds() > enemySpawnTime && AllEnemies.size() < enemyLimit)
+			if (enemySpawnClock.getElapsedTime().asSeconds() > enemySpawnTime && AllEnemies.size() <= enemyLimit)
 			{
 				Enemy thisEnemy("enemy2.png");
 				int halfEnemyWidth = thisEnemy.getSprite().getGlobalBounds().width / 2;
@@ -193,21 +322,29 @@ int main()
 						{
 							cout << "Game over! Health: " << playerShip.health << endl;
 							//-----do something to end the game ----
+							gOver = !gOver;
+							//clear eneimes off here
+							//AllEnemies.clear();
+							gMenu.setupScore(score);
 						}
 						// --- do something to get rid of the bullet ----
 					}
 				}
 				++it;
 			}
-			//update the window
+
 			window.display();
 
 		} //end of the game logic
 
-		else
+		else if (gOver == true)
 		{
+			window.clear();		// clear window
+			gMenu.draw(window); // render pause menu
+			window.display();	// update window
 			window.setMouseCursorVisible(true);
 		}
+		//try the draw gOverscreen here dont forget could just reset score and player health
 	}
 
 	return 0;
