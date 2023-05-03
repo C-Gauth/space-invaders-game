@@ -9,7 +9,7 @@ class Bullet : public sf::Drawable, public sf::Transformable
 {
 public:
 	int dmg;
-	bool hasCollided = false;
+
 	Bullet()
 	{
 		dmg = 20;
@@ -86,11 +86,6 @@ public:
 		target.draw(sprite, states);
 	}
 
-	void setSprite(const sf::Sprite& newSprite)
-	{
-		sprite = newSprite;
-	}
-
 private:
 	sf::Texture texture;
 	sf::Sprite sprite;
@@ -158,10 +153,6 @@ public:
 		return hitbox.getGlobalBounds();
 	}
 
-	int getHealth() const
-	{
-		return health;
-	}
 	void setPosition(sf::Vector2f position) // to move the ship
 	{
 		sf::Transformable::setPosition(position); // update position

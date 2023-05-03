@@ -1,6 +1,7 @@
 #include "classes.h"
 #include "gameOverMenu.hpp"
 #include "pauseMenu.hpp"
+#include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <algorithm>
@@ -11,7 +12,8 @@
 
 void debugPrint(sf::RenderWindow& window); //helper to debug
 vector<Enemy> AllEnemies;				   // global enemy list
-sf::Texture enemyTexture;
+sf::Texture enemyTexture;				   //global enemy textures
+sf::Music music;						   //global music
 
 int main()
 {
@@ -33,6 +35,14 @@ int main()
 	{
 		std::cout << "--ERROR loading enemy texture--";
 	}
+
+	//set music
+	if (!music.openFromFile("the-dying.mp3"))
+	{
+		std::cout << "--ERROR loading music file--";
+	}
+	music.setVolume(80);
+	music.play();
 
 	//set up score
 	sf::Font font;
@@ -67,22 +77,16 @@ int main()
 	sf::Clock enemySpawnClock;
 	float enemySpawnTime = 4.f; // time between enemy spawnings
 	//game variables
-	int16_t enemyLimit = 4;
+	uint enemyLimit = 4;
 	bool paused = false;
 	sf::Vector2i pausePosition;
 
 	//player ship
 	Ship playerShip("ship2.png");
 
-	// Use the render texture as the new background texture
-	sf::Sprite sprite(renderTexture.getTexture());
-	background.setSprite(sprite);
-
 	// Create enemies
 	Enemy enemy1("enemy2.png");
-	//Boss boss1;
 	AllEnemies.push_back(enemy1);
-	//AllBosses.push_back(boss1);
 	srand(time(NULL));
 
 	// Set position for enemy 1
@@ -119,7 +123,6 @@ int main()
 								pMenu.draw(window); // render pause menu
 								window.display();	// update window
 
-								std::cout << "this one pauses" << endl;
 								pausePosition = sf::Mouse::getPosition(window); //get pause location
 							}
 							/*else //escape no longer unpauses game when paused
@@ -154,6 +157,23 @@ int main()
 							}
 							break;
 
+						case sf::Keyboard::Up:
+							if (paused == true)
+							{
+								pMenu.moveUp();
+								window.clear();		// clear window
+								pMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							if (gOver == true && paused != true)
+							{
+								gMenu.moveUp();
+								window.clear();		// clear window
+								gMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							break;
+
 						case sf::Keyboard::S:
 							if (paused == true)
 							{
@@ -170,6 +190,24 @@ int main()
 								window.display();	// update window
 							}
 							break;
+
+						case sf::Keyboard::Down:
+							if (paused == true)
+							{
+								pMenu.moveDown();
+								window.clear();		// clear window
+								pMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							if (gOver == true && paused != true)
+							{
+								gMenu.moveDown();
+								window.clear();		// clear window
+								gMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							break;
+
 						case sf::Keyboard::Return:
 							if (paused == true && gOver != true)
 							{
@@ -267,14 +305,9 @@ int main()
 			window.clear();
 			window.draw(background);
 			scoreText.setPosition(window.getSize().x - scoreText.getGlobalBounds().width - 20, 20);
-
 			window.draw(scoreText);
 			window.draw(healthText);
 			window.draw(playerShip);
-
-			// create a vector to store deathParticles instances
-			std::vector<deathParticles> particles;
-
 			//player bullet loop
 			for (auto& bullet : playerShip.bullets) // for all player bullets
 			{
@@ -288,7 +321,7 @@ int main()
 						{
 							deathParticles dParticles;
 							dParticles.setPosition(it->getPosition());
-							particles.push_back(dParticles);
+							window.draw(dParticles);
 							score += 3;
 							scoreText.setString("Score: " + std::to_string(score));
 							it = AllEnemies.erase(it); // remove the dead enemy
@@ -306,7 +339,6 @@ int main()
 				}
 				window.draw(bullet);
 			}
-
 			// enemy spawn loop
 			if (enemySpawnClock.getElapsedTime().asSeconds() > enemySpawnTime && AllEnemies.size() <= enemyLimit)
 			{
@@ -326,21 +358,6 @@ int main()
 				}
 				enemyShootClock.restart();
 			}
-
-			// Check for collisions between enemies and player ship
-			for (auto& enemy : AllEnemies)
-			{
-				if (enemy.isColliding(playerShip.getSprite()))
-				{
-					if (playerShip.health > 0)
-					{
-						playerShip.health -= 20;
-						healthText.setString("Health: " + std::to_string(playerShip.getHealth()));
-						window.draw(healthText);
-					}
-				}
-			}
-
 			//enemy update loop
 			auto it = AllEnemies.begin();
 			while (it != AllEnemies.end()) //iterate through all enemies
@@ -352,27 +369,30 @@ int main()
 					it = AllEnemies.erase(it);
 					continue;
 				}
-				thisEnemy.updateBullets(window.getSize().y);	// update bullets
-				window.draw(thisEnemy);							// draw enemy
-				for (auto enemyBullet : thisEnemy.enemyBullets) //for each bullet of this enemy
+				thisEnemy.updateBullets(window.getSize().y); // update bullets
+				window.draw(thisEnemy);						 // draw enemy
+				//enemy bullet loop
+				for (auto enemyBullet = thisEnemy.enemyBullets.begin(); enemyBullet != thisEnemy.enemyBullets.end();)
 				{
-					window.draw(enemyBullet); // draw it
+					window.draw(*enemyBullet);
 
-					if (playerShip.isColliding(enemyBullet.getSprite())) // check for player colision
+					if (playerShip.isColliding(enemyBullet->getSprite()))
 					{
-						playerShip.health = playerShip.health - enemyBullet.dmg; // hurt player
-						healthText.setString("Health: " + std::to_string(playerShip.getHealth()));
+						playerShip.health = playerShip.health - enemyBullet->dmg;
+						healthText.setString("Health: " + std::to_string(playerShip.health));
+						window.draw(healthText);
 						if (playerShip.health <= 0)
 						{
 							cout << "Game over! Health: " << playerShip.health << endl;
-							//-----do something to end the game ----
 							gOver = !gOver;
-							//clear eneimes off here
-							//AllEnemies.clear();
 							gMenu.setupScore(score);
 						}
-						// --- do something to get rid of the bullet ----
-						enemyBullet.hasCollided = true; // Update hasCollided member variable
+
+						enemyBullet = thisEnemy.enemyBullets.erase(enemyBullet); // erase bullet
+					}
+					else
+					{
+						++enemyBullet; // move to next bullet
 					}
 				}
 				++it;
