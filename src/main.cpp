@@ -1,6 +1,7 @@
 #include "classes.h"
 #include "gameOverMenu.hpp"
 #include "pauseMenu.hpp"
+#include <SFML/Audio.hpp>
 #include <SFML/Graphics.hpp>
 #include <SFML/Window.hpp>
 #include <algorithm>
@@ -11,7 +12,8 @@
 
 void debugPrint(sf::RenderWindow& window); //helper to debug
 vector<Enemy> AllEnemies;				   // global enemy list
-sf::Texture enemyTexture;
+sf::Texture enemyTexture;				   //global enemy textures
+sf::Music music;						   //global music
 
 int main()
 {
@@ -34,6 +36,14 @@ int main()
 		std::cout << "--ERROR loading enemy texture--";
 	}
 
+	//set music
+	if (!music.openFromFile("the-dying.mp3"))
+	{
+		std::cout << "--ERROR loading music file--";
+	}
+	music.setVolume(80);
+	music.play();
+
 	//set up score
 	sf::Font font;
 	font.loadFromFile("8BitMage.ttf");
@@ -43,6 +53,23 @@ int main()
 	scoreText.setFillColor(sf::Color::White);
 	scoreText.setPosition(window.getSize().x - 100.f, 20.f);
 	int score = 0;
+
+	// Set up player ship health text
+	sf::Text healthText;
+	healthText.setFont(font);
+	healthText.setCharacterSize(24);
+	healthText.setFillColor(sf::Color::White);
+	healthText.setPosition(20.f, 20.f);
+	int health = 100;
+
+	// Create a render texture to draw the background and score on
+	sf::RenderTexture renderTexture;
+	renderTexture.create(window.getSize().x, window.getSize().y);
+	renderTexture.clear();
+	renderTexture.draw(background);
+	renderTexture.draw(healthText);
+	renderTexture.draw(scoreText);
+	renderTexture.display();
 
 	// Set up clock for enemy shooting
 	sf::Clock enemyShootClock;
@@ -130,6 +157,23 @@ int main()
 							}
 							break;
 
+						case sf::Keyboard::Up:
+							if (paused == true)
+							{
+								pMenu.moveUp();
+								window.clear();		// clear window
+								pMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							if (gOver == true && paused != true)
+							{
+								gMenu.moveUp();
+								window.clear();		// clear window
+								gMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							break;
+
 						case sf::Keyboard::S:
 							if (paused == true)
 							{
@@ -146,6 +190,24 @@ int main()
 								window.display();	// update window
 							}
 							break;
+
+						case sf::Keyboard::Down:
+							if (paused == true)
+							{
+								pMenu.moveDown();
+								window.clear();		// clear window
+								pMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							if (gOver == true && paused != true)
+							{
+								gMenu.moveDown();
+								window.clear();		// clear window
+								gMenu.draw(window); // render pause menu
+								window.display();	// update window
+							}
+							break;
+
 						case sf::Keyboard::Return:
 							if (paused == true && gOver != true)
 							{
@@ -166,6 +228,8 @@ int main()
 									window.clear();
 									window.draw(scoreText);
 									scoreText.setString("Score: " + std::to_string(score));
+									window.draw(healthText);
+									healthText.setString("Health: " + std::to_string(health));
 									//clear eneimes here
 									AllEnemies.clear();
 									std::cout << "Enemies cleared";
@@ -189,6 +253,8 @@ int main()
 									window.clear();
 									window.draw(scoreText);
 									scoreText.setString("Score: " + std::to_string(score));
+									window.draw(healthText);
+									healthText.setString("Health: " + std::to_string(health));
 									//clear eneimes here
 									AllEnemies.clear();
 									window.display();
@@ -240,6 +306,7 @@ int main()
 			window.draw(background);
 			scoreText.setPosition(window.getSize().x - scoreText.getGlobalBounds().width - 20, 20);
 			window.draw(scoreText);
+			window.draw(healthText);
 			window.draw(playerShip);
 			//player bullet loop
 			for (auto& bullet : playerShip.bullets) // for all player bullets
@@ -302,25 +369,30 @@ int main()
 					it = AllEnemies.erase(it);
 					continue;
 				}
-				thisEnemy.updateBullets(window.getSize().y);	// update bullets
-				window.draw(thisEnemy);							// draw enemy
-				for (auto enemyBullet : thisEnemy.enemyBullets) //for each bullet of this enemy
+				thisEnemy.updateBullets(window.getSize().y); // update bullets
+				window.draw(thisEnemy);						 // draw enemy
+				//enemy bullet loop
+				for (auto enemyBullet = thisEnemy.enemyBullets.begin(); enemyBullet != thisEnemy.enemyBullets.end();)
 				{
-					window.draw(enemyBullet); // draw it
+					window.draw(*enemyBullet);
 
-					if (playerShip.isColliding(enemyBullet.getSprite())) // check for player colision
+					if (playerShip.isColliding(enemyBullet->getSprite()))
 					{
-						playerShip.health = playerShip.health - enemyBullet.dmg; // hurt player
+						playerShip.health = playerShip.health - enemyBullet->dmg;
+						healthText.setString("Health: " + std::to_string(playerShip.health));
+						window.draw(healthText);
 						if (playerShip.health <= 0)
 						{
 							cout << "Game over! Health: " << playerShip.health << endl;
-							//-----do something to end the game ----
 							gOver = !gOver;
-							//clear eneimes off here
-							//AllEnemies.clear();
 							gMenu.setupScore(score);
 						}
-						// --- do something to get rid of the bullet ----
+
+						enemyBullet = thisEnemy.enemyBullets.erase(enemyBullet); // erase bullet
+					}
+					else
+					{
+						++enemyBullet; // move to next bullet
 					}
 				}
 				++it;
